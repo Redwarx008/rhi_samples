@@ -1,0 +1,9 @@
+[submodule "rhi"]
+	path = rhi
+	url = https://github.com/Redwarx008/rhi
+[submodule "third_party/glfw"]
+	path = third_party/glfw
+	url = https://github.com/glfw/glfw
+[submodule "third_party/glm"]
+	path = third_party/glm
+	url = https://github.com/g-truc/glm

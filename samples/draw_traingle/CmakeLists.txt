@@ -1,0 +1,45 @@
+cmake_minimum_required (VERSION 3.13)
+
+set(PROJECT draw_traingle)
+set(PROJECT_FOLDER "Samples/Draw Triangle")
+
+
+add_executable(${PROJECT}  draw_traingle.cpp camera.hpp)
+
+target_link_libraries(${PROJECT} rhi glfw glm)
+
+set(PORJCET_BINARY_DIR "${EXAMPLES_BINARY_OUTPUT_DIR}/${PROJECT}")
+
+set_target_properties(${PROJECT} 
+                PROPERTIES
+                FOLDER ${PROJECT_FOLDER}
+                RUNTIME_OUTPUT_DIRECTORY ${PORJCET_BINARY_DIR}
+)
+
+if (MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W3 /MP")
+endif()
+
+file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/*.vert"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.frag"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.comp"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.geom"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.tesc"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.tese"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.mesh"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.task"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.rgen"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.rchit"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.rmiss"
+                                            "${CMAKE_CURRENT_SOURCE_DIR}/*.rcall")
+
+SOURCE_GROUP("shaders" FILES ${SHADER_FILES})
+
+compile_shader(
+    "${PROJECT}_SHADERS"
+    "${SHADER_FILES}"
+    ""
+    "${PORJCET_BINARY_DIR}"
+    "${GLSL_VALIDATOR}")
+
+add_dependencies(${PROJECT} ${PROJECT}_SHADERS)
