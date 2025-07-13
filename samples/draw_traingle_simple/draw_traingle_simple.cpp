@@ -5,7 +5,6 @@
 #include <vector>
 
 #include <GLFW/glfw3.h>
-#include <rhi/rhi_cpp.h>
 #define GLFW_EXPOSE_NATIVE_WIN32 1
 #include <GLFW/glfw3native.h>
 #define GLM_FORCE_RADIANS
@@ -15,6 +14,8 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include "camera.hpp"
+
+import rhi;
 
 using namespace rhi;
 

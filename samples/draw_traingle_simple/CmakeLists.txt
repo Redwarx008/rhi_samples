@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.13)
+cmake_minimum_required (VERSION 3.28)
 
 set(PROJECT draw_traingle_simple)
 set(PROJECT_FOLDER "Samples/Draw Triangle Simple")

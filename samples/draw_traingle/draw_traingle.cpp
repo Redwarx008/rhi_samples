@@ -4,7 +4,6 @@
 #include <vector>
 #include <string_view>
 
-#include <rhi/rhi_cpp.h>
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32 1
 #include <GLFW/glfw3native.h>
@@ -15,6 +14,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "camera.hpp"
+
+import rhi;
 
 using namespace rhi;
 
