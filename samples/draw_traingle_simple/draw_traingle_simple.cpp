@@ -1,18 +1,18 @@
-#include <memory>
-#include <iostream>
 #include <fstream>
-#include <vector>
+#include <iostream>
+#include <memory>
 #include <string_view>
+#include <vector>
 
-#include <rhi/rhi_cpp.h>
 #include <GLFW/glfw3.h>
+#include <rhi/rhi_cpp.h>
 #define GLFW_EXPOSE_NATIVE_WIN32 1
 #include <GLFW/glfw3native.h>
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #include <glm/glm.hpp>
-#include <glm/gtc/quaternion.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 #include "camera.hpp"
 
@@ -28,40 +28,41 @@ static std::vector<char> loadShaderData(const char* filePath)
 {
     std::ifstream file(filePath, std::ios::ate | std::ios::binary);
     std::vector<char> buffer;
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
         return buffer;
     }
 
     size_t fileSize = (size_t)file.tellg();
     buffer.resize(fileSize);
-    //spirv expects the buffer to be on uint32, so make sure to reserve an int vector big enough for the entire file
+    // spirv expects the buffer to be on uint32, so make sure to reserve an int vector big enough for the entire file
 
-    //put file cursor at beginning
+    // put file cursor at beginning
     file.seekg(0);
 
-    //load the entire file into the buffer
+    // load the entire file into the buffer
     file.read(reinterpret_cast<char*>(buffer.data()), fileSize);
 
-    //now that the file is loaded into the buffer, we can close it
+    // now that the file is loaded into the buffer, we can close it
     file.close();
 
     return buffer;
 }
 
-struct Vertex {
+struct Vertex
+{
     float position[3];
     float color[3];
 };
 
-const std::vector<Vertex> vertices{
-    { {  1.0f,  -1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } },
-    { { -1.0f,  -1.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } },
-    { {  0.0f, 1.0f, 0.0f }, { 0.0f, 0.0f, 1.0f } }
-};
+const std::vector<Vertex> vertices{{{1.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f}},
+                                   {{-1.0f, -1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+                                   {{0.0f, 1.0f, 0.0f}, {0.0f, 0.0f, 1.0f}}};
 
-std::vector<uint32_t> indices{ 0, 1, 2 };
+std::vector<uint32_t> indices{0, 1, 2};
 
-struct ShaderData {
+struct ShaderData
+{
     glm::mat4 projectionMatrix;
     glm::mat4 modelMatrix;
     glm::mat4 viewMatrix;
@@ -92,7 +93,7 @@ public:
             return;
         }
 
-        //glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
         glfwSetWindowUserPointer(mWindow, this);
         glfwSetKeyCallback(mWindow, &GLFW_KeyCallback);
         glfwSetCursorPosCallback(mWindow, &GLFW_CursorPosCallback);
@@ -131,16 +132,16 @@ public:
         dsDesc.usage = TextureUsage::RenderAttachment;
         mDepthStencilTexture = mDevice.CreateTexture(dsDesc);
         mDsView = mDepthStencilTexture.CreateView();
-        // create shader 
+        // create shader
         std::vector<char> buffer = loadShaderData("triangle.vert.spv");
         rhi::ShaderModuleDesc shaderCI{};
         shaderCI.type = ShaderStage::Vertex;
         shaderCI.entry = "main";
-        shaderCI.code = { buffer.data(), buffer.size() };
+        shaderCI.code = {buffer.data(), buffer.size()};
         auto vertexShader = mDevice.CreateShader(shaderCI);
         buffer = loadShaderData("triangle.frag.spv");
         shaderCI.type = ShaderStage::Fragment;
-        shaderCI.code = { buffer.data(), buffer.size() };
+        shaderCI.code = {buffer.data(), buffer.size()};
         auto fragmentShader = mDevice.CreateShader(shaderCI);
 
         // create vertex buffer and index buffer
@@ -163,34 +164,36 @@ public:
         // These match the following shader layout (see triangle.vert):
         //    layout (location = 0) in vec3 inPos;
         //    layout (location = 1) in vec3 inColor;
-        VertexInputAttribute vertexInputs[] =
-        {
-            {0, 0, VertexFormat::Float32x3}, 
-            {0, 1, VertexFormat::Float32x3}
-        };
+        VertexInputAttribute vertexInputs[] = {{0, 0, VertexFormat::Float32x3}, {0, 1, VertexFormat::Float32x3}};
 
         // create Bind set and layout
-        BindSetLayoutEntry layoutEntry[] = { BindSetLayoutEntry::UniformBuffer(ShaderStage::Vertex, 0) };
+        // create pipelineLayout
 
-        BindSetEntry entry[] = { BindSetEntry::Buffer(mUniformBuffer, 0) };
+        rhi::ShaderModule shaders[2] = {vertexShader, fragmentShader};
 
-        rhi::BindSetLayoutDesc bindSetLayoutDesc{};
-        bindSetLayoutDesc.entries = layoutEntry;
-        bindSetLayoutDesc.entryCount = 1;
-        mBindSetLayout = mDevice.CreateBindSetLayout(bindSetLayoutDesc);
+        rhi::PipelineLayoutDesc2 desc{};
+        desc.shaderCount = 2;
+        desc.shaders = shaders;
+        rhi::PipelineLayout pipelineLayout = mDevice.CreatePipelineLayout2(desc);
+
+        BindSetEntry entry[] = {BindSetEntry::Buffer(mUniformBuffer, 0)};
+
         rhi::BindSetDesc bindSetDesc{};
         bindSetDesc.entries = entry;
         bindSetDesc.entryCount = 1;
-        bindSetDesc.layout = mBindSetLayout;
+        bindSetDesc.layout = pipelineLayout.GetBindSetLayout(0);
         mBindSet = mDevice.CreateBindSet(bindSetDesc);
-        // create pipelineLayout
-        rhi::PipelineLayoutDesc desc{};
-        desc.bindSetLayouts = &mBindSetLayout;
-        desc.bindSetLayoutCount = 1;
-        rhi::PipelineLayout pipelineLayout = mDevice.CreatePipelineLayout(desc);
 
-        ShaderState vertexState{ vertexShader };
-        ShaderState fragmentState{ fragmentShader };
+        // create Bind set and layout
+        BindSetLayoutEntry layoutEntry[] = { BindSetLayoutEntry::UniformBuffer(ShaderStage::Vertex, 0) };
+        rhi::BindSetLayoutDesc bindSetLayoutDesc{};
+        bindSetLayoutDesc.entries = layoutEntry;
+        bindSetLayoutDesc.entryCount = 1;
+        auto bindSetLayout = mDevice.CreateBindSetLayout(bindSetLayoutDesc);
+
+
+        ShaderState vertexState{vertexShader};
+        ShaderState fragmentState{fragmentShader};
         // create pipeline
         RenderPipelineDesc pipelineCI{};
         pipelineCI.layout = pipelineLayout;
@@ -215,7 +218,8 @@ public:
         // Update the uniform buffer for the next frame
         ShaderData shaderData{};
         camera.update();
-        glm::mat4 projection = glm::perspective(glm::radians(70.f), (float)mWindowWidth / (float)mWindowHeight, 10000.f, 0.1f);
+        glm::mat4 projection =
+                glm::perspective(glm::radians(70.f), (float)mWindowWidth / (float)mWindowHeight, 10000.f, 0.1f);
 
         glm::mat4 view = camera.getViewMatrix();
         shaderData.projectionMatrix = projection;
@@ -229,7 +233,7 @@ public:
             transferQueue.WriteBuffer(mVertexBuffer, vertices.data(), vertices.size() * sizeof(Vertex), 0);
             transferQueue.WriteBuffer(mUniformBuffer, &shaderData, sizeof(ShaderData), 0);
 
-            Buffer buffersNeedTransfer[] = { mVertexBuffer, mIndexBuffer, mUniformBuffer };
+            Buffer buffersNeedTransfer[] = {mVertexBuffer, mIndexBuffer, mUniformBuffer};
 
             ResourceTransfer transfer{};
             transfer.receivingQueue = mQueue;
@@ -253,7 +257,7 @@ public:
             glfwPollEvents();
 
             mSurface.AcquireNextTexture();
-            // draw 
+            // draw
             render();
             mSurface.Present();
             mDevice.Tick();
@@ -290,13 +294,14 @@ public:
     {
         glfwTerminate();
     }
+
 private:
     rhi::Buffer mUniformBuffer;
     rhi::Buffer mVertexBuffer;
     rhi::Buffer mIndexBuffer;
     rhi::RenderPipeline mPipeline;
     rhi::CommandEncoder mCommandEncoder;
-    rhi::BindSetLayout mBindSetLayout;
+
     rhi::BindSet mBindSet;
 
     uint32_t mWindowWidth = 1024;
@@ -305,10 +310,10 @@ private:
 
     rhi::Texture mDepthStencilTexture;
     rhi::TextureView mDsView;
-    rhi::Queue mQueue;
+
     rhi::Surface mSurface;
     rhi::Device mDevice;
-
+    rhi::Queue mQueue;
 
     uint64_t mFrameCount = 0;
 
@@ -352,7 +357,6 @@ private:
                 camera.velocity.x = 0;
             }
         }
-
     }
 
 
